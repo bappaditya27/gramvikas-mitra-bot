@@ -8,8 +8,8 @@ st.set_page_config(page_title="GramVikas Mitra AI", page_icon="🧘")
 API_KEY = "AIzaSyAHfvmd1RzoKDynWGPmBrd572Qmm6qHomM" 
 genai.configure(api_key=API_KEY)
 
-# Using '2.0-flash-lite' - it's fast and usually has better free limits
-MODEL_NAME = 'models/gemini-2.0-flash-lite'
+# Using the first model from your verified list
+MODEL_NAME = 'models/gemini-2.5-flash'
 
 SYSTEM_PROMPT = (
     "You are 'GramVikas Mitra', an empathetic AI mentor for a user with an MSc in Math. "
@@ -26,10 +26,10 @@ if "chat" not in st.session_state:
     try:
         model = genai.GenerativeModel(MODEL_NAME)
         st.session_state.chat = model.start_chat(history=[])
-        # We wrap the system prompt in a retry as well
+        # Using a safer way to send the initial prompt
         st.session_state.chat.send_message(SYSTEM_PROMPT)
     except Exception as e:
-        st.error(f"Setup Error: {e}")
+        st.error(f"Setup Error: {e}. Please check if the model name is correct.")
 
 # --- 3. AUTO-RETRY LOGIC ---
 def send_message_with_retry(prompt, max_retries=3, delay=25):
@@ -40,19 +40,20 @@ def send_message_with_retry(prompt, max_retries=3, delay=25):
         except Exception as e:
             error_msg = str(e)
             if "429" in error_msg:
-                st.warning(f"Quota reached. Retrying in {delay}s... (Attempt {i+1}/{max_retries})")
+                st.warning(f"Quota reached. Waiting {delay}s... (Attempt {i+1}/{max_retries})")
                 time.sleep(delay)
             elif "404" in error_msg:
-                return "Model name mismatch. Please check the 'MODEL_NAME' variable."
+                return f"Model Error: The name '{MODEL_NAME}' was not recognized by the API."
             else:
                 raise e
-    return "I am still hitting a limit. Please wait a minute and try again."
+    return "Still hitting limits. Let's try again in a few minutes."
 
 # --- 4. UI ---
 st.title("🤖 GramVikas Mitra")
-st.caption("Now using Gemini 2.0 Flash Lite with Auto-Retry")
+st.caption(f"Powered by {MODEL_NAME}")
 
 # Sidebar
+st.sidebar.title("🛠️ Tools")
 if st.sidebar.button("🗑️ Clear Chat"):
     st.session_state.messages = []
     st.session_state.chat = genai.GenerativeModel(MODEL_NAME).start_chat(history=[])
@@ -66,16 +67,16 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
 # User Input
-if prompt := st.chat_input("How was your day?"):
+if prompt := st.chat_input("Talk to me..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
+        with st.spinner("Analyzing..."):
             try:
                 ai_response = send_message_with_retry(prompt)
                 st.markdown(ai_response)
                 st.session_state.messages.append({"role": "assistant", "content": ai_response})
             except Exception as e:
-                st.error(f"Critical Error: {e}")
+                st.error(f"Critical System Error: {e}")
