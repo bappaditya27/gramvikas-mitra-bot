@@ -1,61 +1,44 @@
-import streamlit as st
-import google.generativeai as genai
-
-# --- 1. CONFIGURATION ---
-st.set_page_config(page_title="GramVikas Mitra AI", page_icon="🧘")
-
-# We will use your key directly here for now
-# (Reminder: Later, move this to Streamlit Secrets for safety!)
-API_KEY = "AIzaSyAHfvmd1RzoKDynWGPmBrd572Qmm6qHomM" 
-
-genai.configure(api_key=API_KEY)
-
-# --- 2. IDENTITY & BRAIN ---
-# This "Persona" ensures the AI stays focused on your specific life needs
-SYSTEM_PROMPT = (
-    "You are 'GramVikas Mitra', an elite AI mentor for a user with an MSc in Mathematics. "
-    "CONTEXT: The user works as a CSR at Concentrix (night shifts), earns ₹20,000/month, "
-    "is studying the Google Data Analytics course, and dreams of building a load-bearing "
-    "concrete house in his village. He supports an NGO. "
-    "TONE: Compassionate, highly logical, and encouraging. Use mathematical analogies. "
-    "If the user is stressed or angry, be a calming friend first. "
-    "If the user asks about Python/Data, be a strict but helpful tutor."
-)
-
-model = genai.GenerativeModel('gemini-1.5-flash') # Using the fast, smart model
-
-# --- 3. SESSION STATE (Memory) ---
-if "chat" not in st.session_state:
-    # Start a chat session with the system identity
-    st.session_state.chat = model.start_chat(history=[])
+google.api_core.exceptions.NotFound: This app has encountered an error. The original error message is redacted to prevent data leaks. Full error details have been recorded in the logs (if you're on Streamlit Cloud, click on 'Manage app' in the lower right of your app).
+Traceback:
+File "/mount/src/gramvikas-mitra-bot/streamlit_app.py", line 31, in <module>
     st.session_state.chat.send_message(SYSTEM_PROMPT)
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-# --- 4. UI ---
-st.title("🤖 GramVikas Mitra (Smart AI)")
-st.caption("Connected to Gemini | Personalized for your Career & Life")
-
-# Display History
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-# User Input
-if prompt := st.chat_input("How was your shift? Or ask a Python question..."):
-    # Show user message
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # Generate Smart Response
-    with st.chat_message("assistant"):
-        try:
-            # We send the prompt to the AI
-            response = st.session_state.chat.send_message(prompt)
-            ai_text = response.text
-            
-            st.markdown(ai_text)
-            st.session_state.messages.append({"role": "assistant", "content": ai_text})
-        except Exception as e:
-            st.error("I'm having trouble connecting to the brain. Check your internet or API key.")
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+File "/home/adminuser/venv/lib/python3.13/site-packages/google/generativeai/generative_models.py", line 578, in send_message
+    response = self.model.generate_content(
+        contents=history,
+    ...<5 lines>...
+        request_options=request_options,
+    )
+File "/home/adminuser/venv/lib/python3.13/site-packages/google/generativeai/generative_models.py", line 331, in generate_content
+    response = self._client.generate_content(
+        request,
+        **request_options,
+    )
+File "/home/adminuser/venv/lib/python3.13/site-packages/google/ai/generativelanguage_v1beta/services/generative_service/client.py", line 835, in generate_content
+    response = rpc(
+        request,
+    ...<2 lines>...
+        metadata=metadata,
+    )
+File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/gapic_v1/method.py", line 131, in __call__
+    return wrapped_func(*args, **kwargs)
+File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/retry/retry_unary.py", line 294, in retry_wrapped_func
+    return retry_target(
+        target,
+    ...<3 lines>...
+        on_error=on_error,
+    )
+File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/retry/retry_unary.py", line 156, in retry_target
+    next_sleep = _retry_error_helper(
+        exc,
+    ...<6 lines>...
+        timeout,
+    )
+File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/retry/retry_base.py", line 214, in _retry_error_helper
+    raise final_exc from source_exc
+File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/retry/retry_unary.py", line 147, in retry_target
+    result = target()
+File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/timeout.py", line 130, in func_with_timeout
+    return func(*args, **kwargs)
+File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/grpc_helpers.py", line 77, in error_remapped_callable
+    raise exceptions.from_grpc_error(exc) from exc
