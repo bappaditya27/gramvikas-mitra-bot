@@ -1,44 +1,55 @@
-google.api_core.exceptions.NotFound: This app has encountered an error. The original error message is redacted to prevent data leaks. Full error details have been recorded in the logs (if you're on Streamlit Cloud, click on 'Manage app' in the lower right of your app).
-Traceback:
-File "/mount/src/gramvikas-mitra-bot/streamlit_app.py", line 31, in <module>
-    st.session_state.chat.send_message(SYSTEM_PROMPT)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
-File "/home/adminuser/venv/lib/python3.13/site-packages/google/generativeai/generative_models.py", line 578, in send_message
-    response = self.model.generate_content(
-        contents=history,
-    ...<5 lines>...
-        request_options=request_options,
-    )
-File "/home/adminuser/venv/lib/python3.13/site-packages/google/generativeai/generative_models.py", line 331, in generate_content
-    response = self._client.generate_content(
-        request,
-        **request_options,
-    )
-File "/home/adminuser/venv/lib/python3.13/site-packages/google/ai/generativelanguage_v1beta/services/generative_service/client.py", line 835, in generate_content
-    response = rpc(
-        request,
-    ...<2 lines>...
-        metadata=metadata,
-    )
-File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/gapic_v1/method.py", line 131, in __call__
-    return wrapped_func(*args, **kwargs)
-File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/retry/retry_unary.py", line 294, in retry_wrapped_func
-    return retry_target(
-        target,
-    ...<3 lines>...
-        on_error=on_error,
-    )
-File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/retry/retry_unary.py", line 156, in retry_target
-    next_sleep = _retry_error_helper(
-        exc,
-    ...<6 lines>...
-        timeout,
-    )
-File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/retry/retry_base.py", line 214, in _retry_error_helper
-    raise final_exc from source_exc
-File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/retry/retry_unary.py", line 147, in retry_target
-    result = target()
-File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/timeout.py", line 130, in func_with_timeout
-    return func(*args, **kwargs)
-File "/home/adminuser/venv/lib/python3.13/site-packages/google/api_core/grpc_helpers.py", line 77, in error_remapped_callable
-    raise exceptions.from_grpc_error(exc) from exc
+import streamlit as st
+import google.generativeai as genai
+
+# --- 1. CONFIGURATION ---
+st.set_page_config(page_title="GramVikas Mitra AI", page_icon="🧘")
+
+# Your API Key
+API_KEY = "AIzaSyAHfvmd1RzoKDynWGPmBrd572Qmm6qHomM" 
+genai.configure(api_key=API_KEY)
+
+# Using a standard model name that usually works everywhere
+MODEL_NAME = 'gemini-1.5-flash'
+
+SYSTEM_PROMPT = (
+    "You are 'GramVikas Mitra', an empathetic AI mentor. The user has an MSc in Math, "
+    "works night shifts at Concentrix, and is studying Data Analytics. "
+    "Goal: Build a concrete house in his village. "
+    "Be logical, use math analogies, and prioritize mental health if the user is stressed."
+)
+
+# --- 2. SESSION STATE ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+    
+if "chat" not in st.session_state:
+    model = genai.GenerativeModel(MODEL_NAME)
+    st.session_state.chat = model.start_chat(history=[])
+    # Send system instructions
+    try:
+        st.session_state.chat.send_message(SYSTEM_PROMPT)
+    except Exception as e:
+        st.error(f"Brain Sync Error: {e}")
+
+# --- 3. UI ---
+st.title("🤖 GramVikas Mitra")
+st.caption("AI Mentor for Career & Life")
+
+# Display History
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# User Input
+if prompt := st.chat_input("How was your shift?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        try:
+            response = st.session_state.chat.send_message(prompt)
+            st.markdown(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
+        except Exception as e:
+            st.error(f"I'm having trouble thinking right now: {e}")
