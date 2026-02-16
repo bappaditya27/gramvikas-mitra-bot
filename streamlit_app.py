@@ -9,7 +9,7 @@ API_KEY = "AIzaSyAHfvmd1RzoKDynWGPmBrd572Qmm6qHomM"
 genai.configure(api_key=API_KEY)
 
 # Use one of the models from your diagnostic list
-MODEL_NAME = 'models/gemini-2.0-flash'
+MODEL_NAME = 'models/gemini-2.5-flash'
 
 SYSTEM_PROMPT = (
     "You are 'GramVikas Mitra', an empathetic AI mentor for a user with an MSc in Math. "
