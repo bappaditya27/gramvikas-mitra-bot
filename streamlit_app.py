@@ -1,66 +1,61 @@
 import streamlit as st
-import random
+import google.generativeai as genai
 
-# --- 1. CRISIS & EMPATHY LOGIC ---
-def get_mentor_response(user_text, stress_level):
-    text = user_text.lower()
-    
-    # EMERGENCY / CRISIS DETECTION
-    # If things are very dark, the bot must stop talking about money/career.
-    crisis_keywords = ["harm", "hurt", "worst", "anger", "die", "suicide", "hate"]
-    if any(word in text for word in crisis_keywords) or stress_level >= 9:
-        return ("I'm stopping the 'data talk' right now because I can hear how much pain you're in. "
-                "Anger and thoughts of self-harm are heavy burdens to carry after a long shift. "
-                "Please, before we talk about careers or math, reach out to someone—a friend, Hia, "
-                "or a professional. You are worth more than any job or any salary. "
-                "Can you promise me you'll take a moment to just breathe and drink some water?")
+# --- 1. CONFIGURATION ---
+st.set_page_config(page_title="GramVikas Mitra AI", page_icon="🧘")
 
-    # FINANCIAL / CAREER LOGIC (Only if not in crisis)
-    if any(word in text for word in ["salary", "money", "loan", "emi"]):
-        responses = [
-            f"Debt is just a math problem, but your peace of mind is not. Let's tackle one small part of it today.",
-            f"I know ₹20,000 feels small for the effort you put in at Concentrix. It's temporary fuel for your journey.",
-            f"Don't let the EMI define your worth. You are a mathematician building a future."
-        ]
-        return random.choice(responses)
+# We will use your key directly here for now
+# (Reminder: Later, move this to Streamlit Secrets for safety!)
+API_KEY = "AIzaSyAHfvmd1RzoKDynWGPmBrd572Qmm6qHomM" 
 
-    elif any(word in text for word in ["data", "analytics", "python", "google"]):
-        return ("Focusing on your studies is your ticket to a new life in Gurgaon. "
-                "Even 10 minutes of SQL tonight is a victory over a bad day.")
+genai.configure(api_key=API_KEY)
 
-    # FALLBACKS (To avoid repetition)
-    else:
-        fallbacks = [
-            "I'm listening. Tell me more about what happened today at work—did something specific trigger that anger?",
-            "You mentioned feeling 'not good.' Is it the financial pressure, or just the exhaustion of the shift?",
-            "Sometimes it helps to write it out. I'm here to hold the space for you. What's on your mind?"
-        ]
-        return random.choice(fallbacks)
+# --- 2. IDENTITY & BRAIN ---
+# This "Persona" ensures the AI stays focused on your specific life needs
+SYSTEM_PROMPT = (
+    "You are 'GramVikas Mitra', an elite AI mentor for a user with an MSc in Mathematics. "
+    "CONTEXT: The user works as a CSR at Concentrix (night shifts), earns ₹20,000/month, "
+    "is studying the Google Data Analytics course, and dreams of building a load-bearing "
+    "concrete house in his village. He supports an NGO. "
+    "TONE: Compassionate, highly logical, and encouraging. Use mathematical analogies. "
+    "If the user is stressed or angry, be a calming friend first. "
+    "If the user asks about Python/Data, be a strict but helpful tutor."
+)
 
-# --- 2. THE APP INTERFACE ---
-st.title("🧘 GramVikas Mentor")
+model = genai.GenerativeModel('gemini-1.5-flash') # Using the fast, smart model
 
-# Sidebar for Context
-st.sidebar.title("Your State")
-current_stress = st.sidebar.slider("Stress Level", 1, 10, 5)
-
+# --- 3. SESSION STATE (Memory) ---
+if "chat" not in st.session_state:
+    # Start a chat session with the system identity
+    st.session_state.chat = model.start_chat(history=[])
+    st.session_state.chat.send_message(SYSTEM_PROMPT)
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display Chat
-for m in st.session_state.messages:
-    with st.chat_message(m["role"]):
-        st.write(m["content"])
+# --- 4. UI ---
+st.title("🤖 GramVikas Mitra (Smart AI)")
+st.caption("Connected to Gemini | Personalized for your Career & Life")
 
-# Chat Input
-if prompt := st.chat_input("Speak your mind..."):
+# Display History
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# User Input
+if prompt := st.chat_input("How was your shift? Or ask a Python question..."):
+    # Show user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
-        st.write(prompt)
+        st.markdown(prompt)
 
-    # Get the logic-based response
-    response = get_mentor_response(prompt, current_stress)
-    
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    # Generate Smart Response
     with st.chat_message("assistant"):
-        st.write(response)
+        try:
+            # We send the prompt to the AI
+            response = st.session_state.chat.send_message(prompt)
+            ai_text = response.text
+            
+            st.markdown(ai_text)
+            st.session_state.messages.append({"role": "assistant", "content": ai_text})
+        except Exception as e:
+            st.error("I'm having trouble connecting to the brain. Check your internet or API key.")
