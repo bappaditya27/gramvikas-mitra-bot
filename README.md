@@ -1,2 +1,2 @@
 # gramvikas-mitra-bot
-This bot is created to be aware about your finance management
+AI Financial Mentor using Gemini API and Streamlit. Features empathetic response logic and financial planning.
